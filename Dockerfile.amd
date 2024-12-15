@@ -76,9 +76,10 @@ RUN cd llama.cpp && \
     && cmake --build build --config Release -- -j 16 && cd ..
 
 # Create entrypoint script
-RUN echo "#!/bin/bash" > /app/entrypoint.sh && \
-    echo "cd /app" >> /app/entrypoint.sh && \
-    echo "exec \"\$@\"" >> /app/entrypoint.sh && \
+RUN echo '#!/bin/bash' > /app/entrypoint.sh && \
+    echo 'cd /app' >> /app/entrypoint.sh && \
+    echo 'source .venv/bin/activate' >> /app/entrypoint.sh && \
+    echo 'exec "$@"' >> /app/entrypoint.sh && \
     chmod +x /app/entrypoint.sh
 
 ##########################################
