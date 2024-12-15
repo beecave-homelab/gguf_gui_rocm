@@ -1,0 +1,4 @@
+huggingface_hub
+streamlit
+watchdog
+llama-cpp-python
