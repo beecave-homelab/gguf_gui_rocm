@@ -66,9 +66,14 @@ RUN python3 -m venv .venv && \
     pip install -r requirements-rocm.txt
 
 # Build llama.cpp with ROCm support
+# RUN cd llama.cpp && \
+#     make -j "$(nproc)" && \
+#     cd ..
+
 RUN cd llama.cpp && \
-    make -j "$(nproc)" && \
-    cd ..
+    HIPCXX="$(hipconfig -l)/clang" HIP_PATH="$(hipconfig -R)" \
+    cmake -S . -B build -DGGML_HIP=ON -DAMDGPU_TARGETS=gfx1030 -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build build --config Release -- -j 16 && cd ..
 
 # Create entrypoint script
 RUN echo "#!/bin/bash" > /app/entrypoint.sh && \
