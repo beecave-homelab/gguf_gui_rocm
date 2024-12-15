@@ -55,6 +55,9 @@ WORKDIR /app
 RUN git clone --depth=1 https://github.com/kevkid/gguf_gui.git /app
 RUN git clone --depth=1 https://github.com/ggerganov/llama.cpp.git /app/llama.cpp
 
+COPY requirements.txt /app/requirements.txt
+COPY requirements-rocm.txt /app/requirements-rocm.txt
+
 # Install Python dependencies
 RUN python3 -m venv .venv && \
     . .venv/bin/activate && \
