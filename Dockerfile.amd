@@ -31,7 +31,7 @@ FROM rocm-base AS python-setup
 RUN apt-get update && apt-get install -y software-properties-common && \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    python3.11 python3.11-dev python3-pip python3-venv python3-setuptools python3.9-distutils \
+    python3.11 python3.11-dev python3.11-venv python3-pip python3-setuptools python3.9-distutils \
     curl openssl libssl-dev liblzma-dev libffi-dev libsqlite3-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -56,8 +56,8 @@ RUN git clone --depth=1 https://github.com/kevkid/gguf_gui.git /app
 RUN git clone --depth=1 https://github.com/ggerganov/llama.cpp.git /app/llama.cpp
 
 # Install Python dependencies
-RUN python3 -m venv .venv
-RUN . .venv/bin/activate && \
+RUN python3 -m venv .venv && \
+    . .venv/bin/activate && \
     pip install --upgrade pip && \
     pip install -r requirements.txt && \
     pip install -r requirements-rocm.txt
