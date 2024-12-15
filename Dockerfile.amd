@@ -1,0 +1,86 @@
+###########################################
+#### SETUP BASE IMAGE WITH ROCM-6.1.2 ####
+###########################################
+FROM rocm/dev-ubuntu-22.04:6.1.2 AS rocm-base
+
+# Install essential dependencies and ROCm libraries
+RUN apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    sudo wget git cmake rocsparse-dev hipsparse-dev rocthrust-dev rocblas-dev hipblas-dev make build-essential \
+    ocl-icd-opencl-dev opencl-headers clinfo \
+    rocrand-dev hiprand-dev rccl-dev \
+    gcc-11 g++-11 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Set ROCm environment variables
+ENV ROCM_PATH=/opt/rocm \
+    HSA_OVERRIDE_GFX_VERSION=10.3.0 \
+    LLAMA_HIPBLAS=1 \
+    CC=gcc-11 \
+    CXX=g++-11
+
+# Add ROCm binaries to PATH
+ENV PATH="${PATH}:/opt/rocm/bin"
+
+#######################################
+########## INSTALL PYTHON 3.9 #########
+#######################################
+FROM rocm-base AS python-setup
+
+# Add deadsnakes PPA and install Python 3.9
+RUN apt-get update && apt-get install -y software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    python3.11 python3.11-dev python3-pip python3-setuptools python3.9-distutils \
+    curl openssl libssl-dev liblzma-dev libffi-dev libsqlite3-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Ensure Python 3.11 is the default python3
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+
+############################################
+#### INSTALL GGUF-GUI DEPENDENCIES #########
+############################################
+FROM python-setup AS app-setup
+
+# Set up environment variables
+ENV HOME=/app \
+    PATH=/app:/app/llama.cpp:$PATH \
+    DOCKER_BUILD=true
+
+WORKDIR /app
+
+# Clone repositories
+RUN git clone --depth=1 https://github.com/kevkid/gguf_gui.git /app
+RUN git clone --depth=1 https://github.com/ggerganov/llama.cpp.git /app/llama.cpp
+
+# Install Python dependencies
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt && \
+    pip install -r requirements-rocm.txt
+
+# Build llama.cpp with ROCm support
+RUN cd llama.cpp && \
+    make -j "$(nproc)" && \
+    cd ..
+
+# Create entrypoint script
+RUN echo "#!/bin/bash" > /app/entrypoint.sh && \
+    echo "cd /app" >> /app/entrypoint.sh && \
+    echo "exec \"\$@\"" >> /app/entrypoint.sh && \
+    chmod +x /app/entrypoint.sh
+
+##########################################
+#### FINAL SETUP FOR GGUF-GUI APP ########
+##########################################
+FROM app-setup AS gguf-gui-final
+
+WORKDIR /app
+
+# Set up volume and port
+VOLUME [ "/app/models" ]
+EXPOSE 8501
+
+# Run the application
+CMD [ "/app/entrypoint.sh", "streamlit", "run", "main.py", "--browser.serverAddress", "0.0.0.0" ]
