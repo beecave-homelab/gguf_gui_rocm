@@ -56,7 +56,9 @@ RUN git clone --depth=1 https://github.com/kevkid/gguf_gui.git /app
 RUN git clone --depth=1 https://github.com/ggerganov/llama.cpp.git /app/llama.cpp
 
 # Install Python dependencies
-RUN pip install --upgrade pip && \
+RUN python3 -m venv .venv
+RUN . .venv/bin/activate && \
+    pip install --upgrade pip && \
     pip install -r requirements.txt && \
     pip install -r requirements-rocm.txt
 
