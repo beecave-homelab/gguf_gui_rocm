@@ -109,7 +109,7 @@ RUN . /app/.venv/bin/activate && \
 #     make -j "$(nproc)" && \
 #     cd ..
 
-RUN cd llama.cpp && \
+RUN cd /app/llama.cpp && \
     HIPCXX="$(hipconfig -l)/clang" HIP_PATH="$(hipconfig -R)" \
     cmake -S . -B build -DGGML_HIP=ON -DAMDGPU_TARGETS=gfx1030 -DCMAKE_BUILD_TYPE=Release \
     && cmake --build build --config Release -- -j 16 && cd ..
