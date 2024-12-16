@@ -60,6 +60,12 @@ ENV WORKDIR=/app
 # Set the working directory
 WORKDIR $WORKDIR
 
+# Create the home directory add a passwordless user.
+RUN mkdir -p $HOME && \
+    groupadd --gid $USER_GID $USERNAME && \
+    adduser --uid $USER_UID --gid $USER_GID $USERNAME --no-create-home --home $HOME --disabled-password --gecos "" && \
+    chown -R $USERNAME:$USERNAME /app
+
 # Clone repositories
 RUN git clone --depth=1 https://github.com/kevkid/gguf_gui.git /app
 RUN git clone --depth=1 https://github.com/ggerganov/llama.cpp.git /app/llama.cpp
