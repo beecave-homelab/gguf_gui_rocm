@@ -89,8 +89,8 @@ RUN curl https://pyenv.run | bash && \
     $HOME/.pyenv/shims/python3 -m venv .venv
 
 # Install Python dependencies
-RUN pip install -r requirements.txt && \
-    pip install -r requirements-rocm.txt
+RUN pip install -r /app/requirements.txt && \
+    pip install -r /app/requirements-rocm.txt
 
 # RUN python3 -m venv .venv && \
 #     . .venv/bin/activate && \
