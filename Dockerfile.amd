@@ -61,10 +61,6 @@ ENV USER_GID $ARG_USER_GID
 ENV HOME /app
 ENV PATH=/app:/app/llama.cpp:$PATH
 ENV PORT=8501
-ENV WORKDIR=/app
-
-# Set the working directory
-WORKDIR $WORKDIR
 
 # Create the home directory add a passwordless user.
 RUN mkdir -p $HOME && \
@@ -114,7 +110,7 @@ RUN cd llama.cpp && \
 FROM app-setup AS gguf-gui-final
 
 # Set the working directory
-WORKDIR $WORKDIR
+WORKDIR $HOME
 
 # Build an entrypoint.sh that activates the virtual environment
 RUN echo "#!/bin/bash" > /app/entrypoint.sh && \
@@ -127,7 +123,7 @@ RUN echo "#!/bin/bash" > /app/entrypoint.sh && \
     chmod +x /app/entrypoint.sh
 
 # Set up volume and port
-VOLUME [ "$WORKDIR/models" ]
+VOLUME [ "$HOME/models" ]
 EXPOSE $PORT
 
 # Run the application
