@@ -17,8 +17,8 @@ ENV ROCM_PATH=/opt/rocm
 ENV HSA_OVERRIDE_GFX_VERSION=10.3.0
 ENV LLAMA_HIPBLAS=1
 ENV AMDGPU_TARGETS=gfx1030
-# ENV CC=gcc-11
-# ENV CXX=g++-11
+ENV CC=gcc-11
+ENV CXX=g++-11
 
 # Add ROCm binaries to PATH
 ENV PATH="${PATH}:/opt/rocm/bin"
@@ -32,7 +32,7 @@ FROM rocm-base AS python-setup
 RUN apt-get update && apt-get install -y software-properties-common && \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    python3.11 python3.11-dev python3.11-venv python3-pip python3-setuptools python3.9-distutils \
+    python3.11 python3.11-dev python3.11-venv python3-pip python3-setuptools python3.11-distutils \
     curl openssl libssl-dev liblzma-dev libffi-dev libsqlite3-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -54,8 +54,11 @@ ENV USER_UID $ARG_USER_UID
 ENV USER_GID $ARG_USER_GID
 ENV HOME /app
 ENV PATH=/app:/app/llama.cpp:$PATH
+ENV PORT=8501
+ENV WORKDIR=/app
 
-WORKDIR /app
+# Set the working directory
+WORKDIR $WORKDIR
 
 # Clone repositories
 RUN git clone --depth=1 https://github.com/kevkid/gguf_gui.git /app
@@ -94,6 +97,9 @@ RUN curl https://pyenv.run | bash && \
 ##########################################
 FROM app-setup AS gguf-gui-final
 
+# Set the working directory
+WORKDIR $WORKDIR
+
 # Build an entrypoint.sh that activates the virtual environment
 RUN echo "#!/bin/bash" > /app/entrypoint.sh && \
     echo 'export PYENV_ROOT="$HOME/.pyenv"' >> /app/entrypoint.sh && \
@@ -104,11 +110,9 @@ RUN echo "#!/bin/bash" > /app/entrypoint.sh && \
     echo "exec \"\$@\"" >> /app/entrypoint.sh && \
     chmod +x /app/entrypoint.sh
 
-WORKDIR /app
-
 # Set up volume and port
-VOLUME [ "/app/models" ]
-EXPOSE 8501
+VOLUME [ "$WORKDIR/models" ]
+EXPOSE $PORT
 
 # Run the application
 CMD [ "/app/entrypoint.sh", "streamlit", "run", "main.py", "--browser.serverAddress", "0.0.0.0" ]
