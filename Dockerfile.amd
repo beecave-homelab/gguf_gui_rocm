@@ -67,12 +67,24 @@ RUN git clone --depth=1 https://github.com/ggerganov/llama.cpp.git /app/llama.cp
 COPY requirements.txt /app/requirements.txt
 COPY requirements-rocm.txt /app/requirements-rocm.txt
 
+# Create entrypoint script
+RUN curl https://pyenv.run | bash && \
+    export PYENV_ROOT="$HOME/.pyenv" && \
+    command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH" && \
+    eval "$(pyenv init -)" && \
+    . ~/.bashrc && pyenv install 3.11 && pyenv global 3.11 && \
+    python3 -m venv .venv
+
 # Install Python dependencies
-RUN python3 -m venv .venv && \
-    . .venv/bin/activate && \
-    pip install --upgrade pip && \
+RUN pip install --upgrade pip && \
     pip install -r requirements.txt && \
     pip install -r requirements-rocm.txt
+
+# RUN python3 -m venv .venv && \
+#     . .venv/bin/activate && \
+#     pip install --upgrade pip && \
+#     pip install -r requirements.txt && \
+#     pip install -r requirements-rocm.txt
 
 # Build llama.cpp with ROCm support
 # RUN cd llama.cpp && \
@@ -83,14 +95,6 @@ RUN cd llama.cpp && \
     HIPCXX="$(hipconfig -l)/clang" HIP_PATH="$(hipconfig -R)" \
     cmake -S . -B build -DGGML_HIP=ON -DAMDGPU_TARGETS=gfx1030 -DCMAKE_BUILD_TYPE=Release \
     && cmake --build build --config Release -- -j 16 && cd ..
-
-# Create entrypoint script
-RUN curl https://pyenv.run | bash && \
-    export PYENV_ROOT="$HOME/.pyenv" && \
-    command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH" && \
-    eval "$(pyenv init -)" && \
-    . ~/.bashrc && pyenv install 3.11 && pyenv global 3.11 && \
-    python -m venv .venv
 
 ##########################################
 #### FINAL SETUP FOR GGUF-GUI APP ########
