@@ -79,14 +79,14 @@ COPY requirements-rocm.txt /app/requirements-rocm.txt
 
 # Create entrypoint script
 RUN curl https://pyenv.run | bash && \
-    echo 'export PYENV_ROOT="/app/.pyenv"' >> /app/.bashrc && \
-    echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> /app/.bashrc && \
-    echo 'eval "$(pyenv init -)"' >> /app/.bashrc && \
-    echo 'eval "$(pyenv virtualenv-init -)"' >> /app/.bashrc && \
-    . /app/.bashrc && \
-    /app/.pyenv/bin/pyenv install 3.11 && \
-    /app/.pyenv/bin/pyenv global 3.11 && \
-    /app/.pyenv/shims/python3 -m venv .venv
+    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> $HOME/.bashrc && \
+    echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> $HOME/.bashrc && \
+    echo 'eval "$(pyenv init -)"' >> $HOME/.bashrc && \
+    echo 'eval "$(pyenv virtualenv-init -)"' >> $HOME/.bashrc && \
+    . $HOME/.bashrc && \
+    $HOME/.pyenv/bin/pyenv install 3.11 && \
+    $HOME/.pyenv/bin/pyenv global 3.11 && \
+    $HOME/.pyenv/shims/python3 -m venv .venv
 
 # Install Python dependencies
 RUN pip install --upgrade pip && \
