@@ -103,7 +103,7 @@ FROM app-setup AS gguf-gui-final
 WORKDIR $HOME
 
 # Activate the virtual environment
-RUN . /app/.venv/bin/activate
+RUN . .venv/bin/activate
 
 # Set up volume and port
 VOLUME [ "$HOME/models" ]
