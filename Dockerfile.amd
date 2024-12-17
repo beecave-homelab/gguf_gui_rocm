@@ -80,6 +80,7 @@ RUN git clone --depth=1 https://github.com/ggerganov/llama.cpp.git /app/llama.cp
 
 COPY requirements.txt /app/requirements.txt
 COPY requirements-rocm.txt /app/requirements-rocm.txt
+COPY entrypoint.sh /app/entrypoint.sh
 
 # Create entrypoint script
 RUN curl https://pyenv.run | bash && \
@@ -90,7 +91,8 @@ RUN curl https://pyenv.run | bash && \
     . /app/.bashrc && \
     /app/.pyenv/bin/pyenv install 3.11 && \
     /app/.pyenv/bin/pyenv global 3.11 && \
-    /app/.pyenv/shims/python -m venv /app/.venv
+    /app/.pyenv/shims/python -m venv /app/.venv && \
+    chmod +x /app/entrypoint.sh
 
 # Install Python dependencies
 RUN . /app/.venv/bin/activate && \
@@ -98,17 +100,7 @@ RUN . /app/.venv/bin/activate && \
     pip install -r /app/requirements.txt && \
     pip install -r /app/requirements-rocm.txt
 
-# RUN python3 -m venv .venv && \
-#     . .venv/bin/activate && \
-#     pip install --upgrade pip && \
-#     pip install -r requirements.txt && \
-#     pip install -r requirements-rocm.txt
-
 # Build llama.cpp with ROCm support
-# RUN cd llama.cpp && \
-#     make -j "$(nproc)" && \
-#     cd ..
-
 RUN cd /app/llama.cpp && \
     HIPCXX="$(hipconfig -l)/clang" HIP_PATH="$(hipconfig -R)" \
     cmake -S . -B build -DGGML_HIP=ON -DAMDGPU_TARGETS=gfx1030 -DCMAKE_BUILD_TYPE=Release \
@@ -122,27 +114,9 @@ FROM app-setup AS gguf-gui-final
 # Set the working directory
 WORKDIR $HOME
 
-# Build an entrypoint.sh that activates the virtual environment
-# RUN echo "#!/bin/bash" > /app/entrypoint.sh && \
-#     echo "source /app/.venv/bin/activate" >> /app/entrypoint.sh && \
-#     echo "export PATH=/app/.venv/bin:\$PATH" >> /app/entrypoint.sh && \
-#     echo "cd /app" >> /app/entrypoint.sh && \
-#     echo "exec \"\$@\"" >> /app/entrypoint.sh && \
-#     chmod +x /app/entrypoint.sh
-
-# Build an entrypoint.sh that activates the virtual environment
-RUN echo "#!/bin/bash" > /app/entrypoint.sh && \
-    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> /app/entrypoint.sh && \
-    echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> /app/entrypoint.sh && \
-    echo 'eval "$(pyenv init -)"' >> /app/entrypoint.sh && \
-    echo ". .venv/bin/activate" >> /app/entrypoint.sh && \
-    echo "cd /app" >> /app/entrypoint.sh && \
-    echo "exec \"\$@\"" >> /app/entrypoint.sh && \
-    chmod +x /app/entrypoint.sh
-
 # Set up volume and port
 VOLUME [ "$HOME/models" ]
 EXPOSE $PORT
 
 # Run the application
-CMD [ "/bin/bash", "/app/entrypoint.sh", "streamlit", "run", "main.py", "--browser.serverAddress", "0.0.0.0" ]
+CMD [ "/app/entrypoint.sh", "streamlit", "run", "main.py", "--browser.serverAddress", "0.0.0.0" ]
