@@ -68,19 +68,14 @@ RUN git clone --depth=1 https://github.com/ggerganov/llama.cpp.git /app/llama.cp
 
 COPY requirements.txt /app/requirements.txt
 COPY requirements-rocm.txt /app/requirements-rocm.txt
-COPY entrypoint.sh /app/entrypoint.sh
 
 # Create entrypoint script
 RUN curl https://pyenv.run | bash && \
-    mkdir -p /app/.pyenv && \
-    echo 'export PYENV_ROOT="/app/.pyenv"' >> /app/.bashrc && \
-    echo 'export PATH="/app/.pyenv/bin:$PATH"' >> /app/.bashrc && \
-    echo 'eval "$(pyenv init -)"' >> /app/.bashrc && \
-    . /app/.bashrc && \
-    /app/.pyenv/bin/pyenv install 3.11 && \
-    /app/.pyenv/bin/pyenv global 3.11 && \
-    /app/.pyenv/shims/python -m venv /app/.venv && \
-    chmod +x /app/entrypoint.sh
+    export PYENV_ROOT="$HOME/.pyenv" && \
+    command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH" && \
+    eval "$(pyenv init -)" && \
+    . ~/.bashrc && pyenv install 3.11 && pyenv global 3.11 && \
+    python -m venv .venv
 
 # Install Python dependencies
 RUN . /app/.venv/bin/activate && \
@@ -103,11 +98,22 @@ FROM app-setup AS gguf-gui-final
 WORKDIR $HOME
 
 # Activate the virtual environment
-RUN . .venv/bin/activate
+# RUN . .venv/bin/activate
 
 # Set up volume and port
 VOLUME [ "$HOME/models" ]
 EXPOSE $PORT
 
+# Build an entrypoint.sh that activates the virtual environment
+RUN echo "#!/bin/bash" > /app/entrypoint.sh && \
+    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> /app/entrypoint.sh && \
+    echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> /app/entrypoint.sh && \
+    echo 'eval "$(pyenv init -)"' >> /app/entrypoint.sh && \
+    echo ". .venv/bin/activate" >> /app/entrypoint.sh && \
+    echo "cd /app" >> /app/entrypoint.sh && \
+    echo "exec \"\$@\"" >> /app/entrypoint.sh && \
+    chmod +x /app/entrypoint.sh
+
 # Run the application
-CMD [ "streamlit", "run", "main.py", "--browser.serverAddress", "0.0.0.0" ]
+# CMD [ "streamlit", "run", "main.py", "--browser.serverAddress", "0.0.0.0" ]
+CMD [ "/app/entrypoint.sh", "streamlit", "run", "main.py", "--browser.serverAddress", "0.0.0.0" ]
