@@ -123,9 +123,19 @@ FROM app-setup AS gguf-gui-final
 WORKDIR $HOME
 
 # Build an entrypoint.sh that activates the virtual environment
+# RUN echo "#!/bin/bash" > /app/entrypoint.sh && \
+#     echo "source /app/.venv/bin/activate" >> /app/entrypoint.sh && \
+#     echo "export PATH=/app/.venv/bin:\$PATH" >> /app/entrypoint.sh && \
+#     echo "cd /app" >> /app/entrypoint.sh && \
+#     echo "exec \"\$@\"" >> /app/entrypoint.sh && \
+#     chmod +x /app/entrypoint.sh
+
+# Build an entrypoint.sh that activates the virtual environment
 RUN echo "#!/bin/bash" > /app/entrypoint.sh && \
-    echo "source /app/.venv/bin/activate" >> /app/entrypoint.sh && \
-    echo "export PATH=/app/.venv/bin:\$PATH" >> /app/entrypoint.sh && \
+    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> /app/entrypoint.sh && \
+    echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> /app/entrypoint.sh && \
+    echo 'eval "$(pyenv init -)"' >> /app/entrypoint.sh && \
+    echo ". .venv/bin/activate" >> /app/entrypoint.sh && \
     echo "cd /app" >> /app/entrypoint.sh && \
     echo "exec \"\$@\"" >> /app/entrypoint.sh && \
     chmod +x /app/entrypoint.sh
