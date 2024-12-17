@@ -114,9 +114,12 @@ FROM app-setup AS gguf-gui-final
 # Set the working directory
 WORKDIR $HOME
 
+# Activate the virtual environment
+RUN . /app/.venv/bin/activate
+
 # Set up volume and port
 VOLUME [ "$HOME/models" ]
 EXPOSE $PORT
 
 # Run the application
-CMD [ "/app/entrypoint.sh", "streamlit", "run", "main.py", "--browser.serverAddress", "0.0.0.0" ]
+CMD [ "streamlit", "run", "main.py", "--browser.serverAddress", "0.0.0.0" ]
