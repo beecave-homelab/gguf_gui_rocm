@@ -125,6 +125,7 @@ WORKDIR $HOME
 # Build an entrypoint.sh that activates the virtual environment
 RUN echo "#!/bin/bash" > /app/entrypoint.sh && \
     echo "source /app/.venv/bin/activate" >> /app/entrypoint.sh && \
+    echo "export PATH=/app/.venv/bin:\$PATH" >> /app/entrypoint.sh && \
     echo "cd /app" >> /app/entrypoint.sh && \
     echo "exec \"\$@\"" >> /app/entrypoint.sh && \
     chmod +x /app/entrypoint.sh
